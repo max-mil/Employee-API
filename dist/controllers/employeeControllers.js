@@ -50,7 +50,7 @@ const createEmployee = (req, res, next) => {
         if (!utilityFunctions_1.employeeUtility.inputValidation(employee, true)) {
             console.log("inputValidation function");
             // return res.status(400).json({errorMessage:"Bad request, error in parameters"});;
-            throw new errors_1.BadRequest("Bad request, error in parameters");
+            throw new errors_1.BadRequest("Bad Request, error in parameters");
         }
         console.log("after input validation");
         const newEmployee = req.body;
@@ -83,13 +83,13 @@ const updateEmployee = (req, res, next) => {
             //input validation
             if (!utilityFunctions_1.employeeUtility.inputValidation(employee2, false)) {
                 // res.status(400).json({errorMessage:"Bad request"});
-                throw new errors_1.BadRequest("Bad request");
+                throw new errors_1.BadRequest("Bad Request");
                 // return;
             }
             //if no change in employee details
             if (employee.name == employee2.name && employee.salary == employee2.salary && employee.department == employee2.department) {
                 console.log("no change in employee details");
-                res.status(304).json({ errorMessage: "No Change" });
+                // res.status(304).json({errorMessage:"No Change"});
                 throw new errors_1.NoChange("No Change");
                 // return;
             }

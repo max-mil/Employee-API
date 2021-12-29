@@ -19,11 +19,10 @@ export class employeeUtility{
             return false;
         }
         //employeeUtility.checkWhiteSpace(department)
-        if(typeof department !== "string" || !( department in Role) ){
+        if(typeof department !== "string" || !( department in Role ) ){
             return false;
         }
         return true;    //might need more checks
-        
     }
 
     //return true if there is white space in number

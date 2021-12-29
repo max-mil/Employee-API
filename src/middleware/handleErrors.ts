@@ -6,13 +6,13 @@ const {GeneralError} = require('../utils/errors');
 const handleErrors = (err:errType,req:Request,res:Response,next:NextFunction)=>{
     if(err instanceof GeneralError){
         return res.status(err.getCode()).json({
-            status: 'error',
-            message: err.message
+            // status: 'error',
+            errorMessage: err.message
         });
     }
     return res.status(500).json({
-        status:'error',
-        message:err.message
+        // status:'error',
+        errorMessage:err.message
     });
 }
 // module.exports = handleErrors;
