@@ -5,8 +5,9 @@ import { employeeUtility } from './utils/utilityFunctions';
 import {Role} from './models/employeeModels';
 import handleErrors from './middleware/handleErrors'
 
+
 const app = express();
-const port = process.env.PORT || 3000;
+const port = 3000;
 app.use(json());
 console.log("Initiating routes");
 app.use('/employee',employeeRoutes);
@@ -20,6 +21,8 @@ app.use(handleErrors);
 app.listen(port, ()=>{
   console.log("server started on http://localhost:"+port);
 });
+
+
 
 
 //import
@@ -149,3 +152,16 @@ app.listen(port, ()=>{
 
 //tsc -w
 //npm start to start development server
+
+//as of 10 Jan 2022
+//npm install --save pg
+//npm install make-runnable --save
+
+//as of 13 Jan 2022
+//npm install -D @types/pg
+
+//as of 14 jan
+//npm i pg-pool pg
+
+//as of 24 jan
+//npm install dotenv --save

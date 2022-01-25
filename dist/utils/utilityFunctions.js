@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.employeeUtility = void 0;
 const employeeModels_1 = require("../models/employeeModels");
+const emp_database_1 = require("../config/emp_database");
 class employeeUtility {
     static inputValidation(employeeTemp, checkAllParameter) {
         let name = employeeTemp.name;
@@ -22,11 +23,6 @@ class employeeUtility {
         }
         return true; //might need more checks
     }
-    //return true if there is white space in number
-    // static checkWhiteSpace(s:number):boolean{
-    //     console.log("check white space: " + s);
-    //     return s.indexOf(' ') >= 0;
-    // }
     //check if number is infinite or negative or isNaN
     //return true if number is invalid
     static numberCheck(num) {
@@ -61,8 +57,21 @@ class employeeUtility {
         console.log("checkInEnum: " + role);
         return Object.values(employeeModels_1.Role).includes(role);
     }
+    //return true if employee id not in database
+    static async checkInDatabase(id) {
+        // id = req.params.id;
+        let checkId = await emp_database_1.pool.query("SELECT COUNT(*) FROM employees WHERE id = '" + id + "';");
+        console.log("checkId: " + checkId.rows[0].count);
+        console.log("______");
+        return (checkId.rows[0].count == 0) ? true : false;
+    }
 }
 exports.employeeUtility = employeeUtility;
+//return true if there is white space in number
+// static checkWhiteSpace(s:number):boolean{
+//     console.log("check white space: " + s);
+//     return s.indexOf(' ') >= 0;
+// }
 // console.log("typeof name: "+typeof(employee.name) );
 //             console.log("typeof name === undefined: "+typeof(employee.name)==="undefined" );
 //             console.log("typeof salary: "+typeof(employee.salary) );

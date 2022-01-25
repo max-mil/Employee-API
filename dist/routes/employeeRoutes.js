@@ -2,6 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = require("express");
 const employeeControllers_1 = require("../controllers/employeeControllers");
+// import {GetAllEmployeesResponse} from '../controllers/employeeControllers';
 const router = (0, express_1.Router)();
 router.get('/', employeeControllers_1.GetAllEmployeesResponse);
 router.get('/:id', employeeControllers_1.EmployeeRequest);

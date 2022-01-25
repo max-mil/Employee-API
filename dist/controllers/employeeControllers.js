@@ -2,46 +2,52 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteEmployee = exports.updateEmployee = exports.createEmployee = exports.EmployeeRequest = exports.GetAllEmployeesResponse = void 0;
 const utilityFunctions_1 = require("../utils/utilityFunctions");
-// import handleErrors from '../middleware/handleErrors'
 const errors_1 = require("../utils/errors");
 const uuid_1 = require("uuid");
-// import { NOTFOUND } from 'dns';
-// import { json } from 'body-parser';
-// import { getSystemErrorMap } from 'util';
+// import {QueryResult} from 'pg';
+const emp_database_1 = require("../config/emp_database");
+var pg = require("pg");
 const Employees = [];
+// const pool2 = new pg();
 //get
-const GetAllEmployeesResponse = (req, res, next) => {
+const GetAllEmployeesResponse = async (req, res, next) => {
     console.log(">GetAllEmployeesResponse");
+    // var client = new pg.Client;
     try {
-        res.status(200).json(Employees);
+        // const con = pool.getConnection(function(err:Error, con: typeof client))
+        const results = await emp_database_1.pool.query('SELECT * FROM employees');
+        console.log(results);
+        // console.log(results.rows);
+        res.status(200).json({ employees: results.rows });
+        // pool.end();
     }
     catch (error) {
         // res.status(500).json({errorMessage:"Server error"});
         next(error);
+        // pool.end();
     }
 };
 exports.GetAllEmployeesResponse = GetAllEmployeesResponse;
 //get
-const EmployeeRequest = (req, res, next) => {
+// export const EmployeeRequest: RequestHandler<{id:string}> = async(req, res,next)=>{
+const EmployeeRequest = async (req, res, next) => {
     try {
-        console.log("EmployeeRequest");
-        const employee = Employees.find(i => i.id == req.params.id);
-        if (employee) {
-            res.status(200).json(employee);
-        }
-        else {
-            // res.status(404).json({errorMessage:"Not Found"});
+        const id = req.params.id;
+        if (await utilityFunctions_1.employeeUtility.checkInDatabase(id)) {
             throw new errors_1.NotFound("Not Found");
         }
+        const employee = await emp_database_1.pool.query('SELECT * FROM employees WHERE id =\'' + (id) + '\';');
+        res.status(200).json(employee.rows);
     }
     catch (error) {
         // res.status(500).json({errorMessage:"Server error"});
         next(error);
+        // pool.end();
     }
 };
 exports.EmployeeRequest = EmployeeRequest;
 //post
-const createEmployee = (req, res, next) => {
+const createEmployee = async (req, res, next) => {
     console.log("createEmployee function");
     try {
         //input validation
@@ -54,11 +60,17 @@ const createEmployee = (req, res, next) => {
         }
         console.log("after input validation");
         const newEmployee = req.body;
-        newEmployee.name = newEmployee.name.trim();
         newEmployee.id = (0, uuid_1.v4)();
+        newEmployee.name = newEmployee.name.trim();
         console.log("employee id: " + newEmployee.id);
-        Employees.push(newEmployee);
-        res.status(200).json({ createEmployee: newEmployee });
+        await emp_database_1.pool.query('INSERT INTO employees (id,name,salary,department) VALUES ($1,$2,$3,$4)', [newEmployee.id, newEmployee.name, newEmployee.salary, newEmployee.department]);
+        // Employees.push(newEmployee);
+        res.status(200).json({
+            "id": newEmployee.id,
+            "name": newEmployee.name,
+            "salary": newEmployee.salary,
+            "department": newEmployee.department
+        });
     }
     catch (error) {
         // res.status(500).json({errorMessage:"Server error, createEmployee function"});
@@ -67,35 +79,57 @@ const createEmployee = (req, res, next) => {
 };
 exports.createEmployee = createEmployee;
 //put
-const updateEmployee = (req, res, next) => {
+//need to convert sql response into json object
+const updateEmployee = async (req, res, next) => {
     console.log("update Employee function");
     try {
-        const index = Employees.findIndex(i => i.id === req.params.id);
-        const employee = Employees[index];
+        // const index = Employees.findIndex(i =>i.id === req.params.id);
+        // const employee = Employees[index];
+        const id = req.params.id;
+        console.log("paramater id: " + id);
+        const employee = await emp_database_1.pool.query("SELECT * FROM employees WHERE id = '" + (id) + "';");
+        console.log("________");
+        console.log("employee: ");
+        console.log(employee.rows[0]);
+        console.log("________");
+        console.log("employee id: " + employee.rows[0].id);
+        console.log("employee name: " + employee.rows[0].name);
+        if (await utilityFunctions_1.employeeUtility.checkInDatabase(id)) {
+            throw new errors_1.NotFound("Not Found");
+        }
         if (employee) {
             let employee2 = {
-                "id": employee.id,
-                "name": !req.body.name ? employee.name : req.body.name.trim(),
-                "salary": !req.body.salary ? employee.salary : req.body.salary,
-                "department": !req.body.department ? employee.department : req.body.department
+                "id": employee.rows[0].id,
+                "name": !req.body.name ? employee.rows[0].name : req.body.name.trim(),
+                "salary": !req.body.salary ? employee.rows[0].salary : req.body.salary,
+                "department": !req.body.department ? employee.rows[0].department : req.body.department
             };
             //if input type is invalid, display error bad request
             //input validation
             if (!utilityFunctions_1.employeeUtility.inputValidation(employee2, false)) {
                 // res.status(400).json({errorMessage:"Bad request"});
                 throw new errors_1.BadRequest("Bad Request");
-                // return;
             }
             //if no change in employee details
-            if (employee.name == employee2.name && employee.salary == employee2.salary && employee.department == employee2.department) {
+            if (employee.rows[0].name == employee2.name && employee.rows[0].salary == employee2.salary && employee.rows[0].department == employee2.department) {
                 console.log("no change in employee details");
                 // res.status(304).json({errorMessage:"No Change"});
                 throw new errors_1.NoChange("No Change");
-                // return;
             }
             else {
-                Employees[index] = { ...employee, ...employee2 };
-                res.status(200).json(Employees[index]);
+                // Employees[index]={...employee,...employee2};
+                console.log("Updating employee, id: " + id);
+                console.log("employee2:");
+                console.log(employee2);
+                console.log("------");
+                await emp_database_1.pool.query("UPDATE employees "
+                    + 'SET id = $1,name = $2,salary = $3,department = $4 '
+                    + "WHERE id = $1;", [employee2.id, employee2.name, employee2.salary, employee2.department]);
+                const employee = await emp_database_1.pool.query("SELECT * FROM employees WHERE id = '" + (id) + "';");
+                console.log("result employee: ");
+                console.log(employee.rows[0]);
+                res.status(200).json(employee.rows[0]);
+                console.log("printed status");
             }
         }
         else {
@@ -110,123 +144,63 @@ const updateEmployee = (req, res, next) => {
 };
 exports.updateEmployee = updateEmployee;
 //delete
-const deleteEmployee = (req, res, next) => {
+const deleteEmployee = async (req, res, next) => {
     try {
-        const index = Employees.findIndex(i => i.id === req.params.id);
-        const employee = Employees[index];
-        if (index !== -1) {
-            Employees.splice(index, 1);
-            res.status(204).json(employee);
+        // const index = Employees.findIndex(i => i.id === req.params.id);
+        // const employee = Employees[index];
+        const id = (req.params.id);
+        if (!(await utilityFunctions_1.employeeUtility.checkInDatabase(id))) {
+            await emp_database_1.pool.query('DELETE FROM employees WHERE id = $1', [id]);
+            res.status(204).json();
+            console.log("id: " + id + " is deleted successfully");
         }
         else {
-            // res.status(404).json({errorMessage:"Not Found"});
             throw new errors_1.NotFound("Not Found");
         }
     }
     catch (error) {
         // res.status(500).json({errorMessage:"Server error"});
+        console.log("In catch, of delete function");
         next(error);
     }
 };
 exports.deleteEmployee = deleteEmployee;
-// Employees[index].name = Employees[index].name.trim();
-// req.body.name.trim();
-// if(req.body.name && req.body.salary && req.body.department){
-// }else {
-//     res.status(400).json({errorMessage:"Bad request"});
+// pool.on('connect', () => {
+//     console.log('Connected to the Database'); 
+// });
+//         const checkId = await pool.query(
+// "SELECT COUNT(*) FROM employees WHERE id = '" + id +"';"
+//         );
+//         console.log("checkId: " + checkId.rows[0].count);
+//         console.log("______");
+// "SELECT employees.id FROM employees WHERE EXISTS (SELECT employees.id FROM employees WHERE employees.id = ' "+ id +" ');"
+// "SELECT "
+// + "CASE WHEN EXISTS "
+// + "( "
+//     + "SELECT FROM employees "
+//     + "WHERE employees.id = "
+//     + id
+// + " ) "
+// + "THEN 'TRUE' "
+// + "ELSE 'FALSE' "
+// + "END;"
+// const employee = await pool.query('SELECT * FROM employees WHERE id =\''+(id)+'\';');
+// const checkId = await pool.query(
+//     'SELECT COUNT(\''+ id +'\') FROM employees'
+// );
+// const checkId = await pool.query(
+//     "SELECT COUNT(*) FROM employees WHERE id = '" + id +"';"
+// );
+// console.log("checkId: " + checkId.rows[0].count);
+// console.log("______");
+// console.log(results);
+// console.log("EmployeeRequest");
+// const employee = Employees.find(i=>i.id == req.params.id);
+// if(employee){
 // }
-// if(Employees.length == 0){
-//     newEmployee.id=0;
-// }else{
+// else{
+//     // res.status(404).json({errorMessage:"Not Found"});
+//     throw new NotFound("Not Found");
 // }
-//if input type is invalid, display error bad request
-// if(employeeUtility.checkType(employee)){
-//     res.status(400).json({errorMessage:"Bad request"});
-//     return;
-// }
-// if(employeeUtility.checkType(employee2)){
-//     res.status(400).json({errorMessage:"Bad request"});
-//     return;
-// }
-// if(!req.body.name || !req.body.salary || !req.body.department){
-//     res.status(400).json({errorMessage:"Bad request"});
-//     return;
-// }
-//check input type, return true if input type is invalid
-// function checkType(name:any, salary:any, department:any):boolean{
-//     return typeof(name)!="string" || typeof(salary)!="number" || typeof(department)!="string" ? true : false;
-// }
-// function inputValidation(name:string,salary:string,department:string):boolean{
-//     console.log("\nInputValidation function\n");
-//     console.log("========================");
-//     //========================
-//     //check name
-//     name = name.trim();
-//     console.log("name: "+name);
-//     if(name.length==0|| name==""){
-//         return false;
-//     }
-//     console.log("after whitespace check");
-//     //========================
-//     //check salary
-//     //check if salary or department have white space
-//     if(checkWhiteSpace(salary) || checkWhiteSpace(department) ){
-//         return false;
-//     }
-//     console.log("after whitespace check");
-//     //remove leading zeros in salary
-//     salary = removeLeadingZeros(salary);
-//     console.log("after remove leading zeros from salary: " +salary);
-//     //check if number is infinite or negative or isNaN
-//     if(numberCheck( salary )){
-//         return false;
-//     }
-//     console.log("after number check");
-//     //========================
-//     //check if role exist in department
-//     if(!checkInEnum(department)){
-//         return false;
-//     }
-//     console.log("end of input validation");
-//     return true;    //need more checks
-// }
-// //check for white space in number
-// //return true if string is invalid
-// function checkWhiteSpace(s:string):boolean{
-//     console.log("check white space: " + s);
-//     return s.indexOf(' ') >= 0;
-// }
-// //check if number is infinite or negative or isNaN
-// //return true if number is invalid
-// function numberCheck(num:string):boolean{
-//     console.log("numberCheck function: " + num);
-//     let parsedNumber;
-//     try{
-//         parsedNumber = parseFloat(num);
-//     }catch(error){
-//         return true;
-//     }
-//     return(!isFinite(parsedNumber) || parsedNumber<0 || isNaN(parsedNumber));
-// }
-// //remove leading zeros in number
-// function removeLeadingZeros(num:string){
-//     console.log("removeLeadingZeros : "+num);
-//     while(num.charAt(0)=='0'){
-//         if(num.length==1){break};
-//         if(num.charAt(1)=='.'){break};
-//         num=num.substr(1,num.length-1);
-//     }
-//     return num;
-// }
-// //check if role exists in department
-// //return true if role exists in given roles
-// function checkInEnum(role:string){
-//     console.log("checkInEnum: "+role);
-//     return Object.values(Role).includes(role);
-// }
-// if(employeeUtility.checkMissingParameters(employee)){
-//     console.log("in check for missing parameter function");
-//     res.status(400).json({errorMessage:"Bad request, missing values"});
-//     return;
-// }
+// pool.end();
 //.

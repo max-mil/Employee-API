@@ -1,6 +1,7 @@
 import {Router} from 'express';
 
 import {GetAllEmployeesResponse, EmployeeRequest, createEmployee, updateEmployee, deleteEmployee} from '../controllers/employeeControllers';
+// import {GetAllEmployeesResponse} from '../controllers/employeeControllers';
 
 const router = Router();
 

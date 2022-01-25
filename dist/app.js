@@ -8,7 +8,7 @@ const body_parser_1 = require("body-parser");
 const employeeRoutes_1 = __importDefault(require("./routes/employeeRoutes"));
 const handleErrors_1 = __importDefault(require("./middleware/handleErrors"));
 const app = (0, express_1.default)();
-const port = process.env.PORT || 3000;
+const port = 3000;
 app.use((0, body_parser_1.json)());
 console.log("Initiating routes");
 app.use('/employee', employeeRoutes_1.default);
@@ -133,3 +133,12 @@ app.listen(port, () => {
 //npm install --save-dev @types/express
 //tsc -w
 //npm start to start development server
+//as of 10 Jan 2022
+//npm install --save pg
+//npm install make-runnable --save
+//as of 13 Jan 2022
+//npm install -D @types/pg
+//as of 14 jan
+//npm i pg-pool pg
+//as of 24 jan
+//npm install dotenv --save

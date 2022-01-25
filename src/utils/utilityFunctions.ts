@@ -1,5 +1,7 @@
+import e from 'express';
 import {Role, Employee} from '../models/employeeModels';
 import { BadRequest } from './errors';
+import { pool } from '../config/emp_database';
 
 export class employeeUtility{
     
@@ -25,11 +27,6 @@ export class employeeUtility{
         return true;    //might need more checks
     }
 
-    //return true if there is white space in number
-    // static checkWhiteSpace(s:number):boolean{
-    //     console.log("check white space: " + s);
-    //     return s.indexOf(' ') >= 0;
-    // }
 
     //check if number is infinite or negative or isNaN
     //return true if number is invalid
@@ -59,7 +56,27 @@ export class employeeUtility{
         console.log("checkInEnum: "+role);
         return Object.values(Role).includes(role);
     }
+
+    //return true if employee id not in database
+    static async checkInDatabase (id:String){
+        // id = req.params.id;
+        let checkId = await pool.query(
+            "SELECT COUNT(*) FROM employees WHERE id = '" + id +"';"
+        );
+        console.log("checkId: " + checkId.rows[0].count);
+        console.log("______");
+        return (checkId.rows[0].count == 0) ? true : false;
+    }
 }
+
+
+//return true if there is white space in number
+// static checkWhiteSpace(s:number):boolean{
+//     console.log("check white space: " + s);
+//     return s.indexOf(' ') >= 0;
+// }
+
+
 // console.log("typeof name: "+typeof(employee.name) );
 //             console.log("typeof name === undefined: "+typeof(employee.name)==="undefined" );
 //             console.log("typeof salary: "+typeof(employee.salary) );
