@@ -1,11 +1,11 @@
 import e from 'express';
-import {Role, Employee} from '../models/employeeModels';
+import {Role, IEmployee} from './IEmployee';
 import { BadRequest } from './errors';
-import { pool } from '../config/emp_database';
+// import { pool } from '../config/emp_database';
 
 export class employeeUtility{
     
-    static inputValidation(employeeTemp:Employee, checkAllParameter:boolean):boolean{
+    static inputValidation(employeeTemp:IEmployee, checkAllParameter:boolean):boolean{
         
         let name = employeeTemp.name;
         let salary = employeeTemp.salary;
@@ -14,14 +14,20 @@ export class employeeUtility{
         
         //check name
         if((typeof name !== "string" || name.trim() == "" || name.length == 0) ) {
+            console.log("name invalid");
             return false;
         }
         //check salary
+        console.log("salary: ");
+        console.log(salary);
+        console.log("typeof salary: " + typeof salary);
         if(typeof salary !== "number" || salary.toString().trim()=="" || salary < 0 ){
+            console.log("salary invalid");
             return false;
         }
         //employeeUtility.checkWhiteSpace(department)
         if(typeof department !== "string" || !( department in Role ) ){
+            console.log("department invalid");
             return false;
         }
         return true;    //might need more checks
@@ -56,86 +62,5 @@ export class employeeUtility{
         console.log("checkInEnum: "+role);
         return Object.values(Role).includes(role);
     }
-
-    //return true if employee id not in database
-    static async checkInDatabase (id:String){
-        // id = req.params.id;
-        let checkId = await pool.query(
-            "SELECT COUNT(*) FROM employees WHERE id = '" + id +"';"
-        );
-        console.log("checkId: " + checkId.rows[0].count);
-        console.log("______");
-        return (checkId.rows[0].count == 0) ? true : false;
-    }
 }
 
-
-//return true if there is white space in number
-// static checkWhiteSpace(s:number):boolean{
-//     console.log("check white space: " + s);
-//     return s.indexOf(' ') >= 0;
-// }
-
-
-// console.log("typeof name: "+typeof(employee.name) );
-//             console.log("typeof name === undefined: "+typeof(employee.name)==="undefined" );
-//             console.log("typeof salary: "+typeof(employee.salary) );
-//             console.log("typeof salary === undefined: "+typeof(employee.salary)==="undefined" );
-            
-//             console.log("typeof department: "+typeof(employee.department) );
-//             console.log("typeof department === undefined: "+typeof(employee.department) === "undefined");
-//             console.log("missing paramaters (all): "+check);
-
-
-
-// static checkMissingParameters(employee:Employee, checkAllParameter:boolean):boolean{
-//     console.log("In checkMissingParameters function:");
-//     console.log("name: "+employee.name + ", employee.salary: "  +employee.salary+ ", employee.department: "+employee.department);
-//     if(checkAllParameter){
-//         console.log();
-//         let check = typeof(employee.name) === undefined || typeof(employee.salary) === undefined || typeof(employee.department) === Role ? true : false;
-        
-//         return check;
-//         // return typeof(employee.name === "undefined") || typeof(employee.salary) === "undefined" || typeof(employee.department) === "undefined" ? true : false;
-//     }else{
-//         let check = typeof(employee.name === undefined) && typeof(employee.salary) === undefined && typeof(employee.department) === undefined ? true : false;
-//         console.log("missing paramaters (one): "+check);
-//         return check;
-//         // return typeof(employee.name === "undefined") && typeof(employee.salary) === "undefined" && typeof(employee.department) === "undefined" ? true : false;
-//     }
-// }
-//========================
-        //check name
-        // name = name.trim();
-        // console.log("trimmed name: " + name);
-        // if(name.length == 0 || name == ""){
-        //     return false;
-        // }
-        // console.log("name is valid");
-        //========================
-        //check salary
-        //check if salary or department have white space
-
-        //checkAllParameters returns true if parameters are missing
-        // if(employeeUtility.checkMissingParameters(employeeTemp,checkAllParameter)){
-        //     console.log("in check for missing parameter function");
-        //     return false;
-        // }
-
-        // static inputValidation(name:string,salary:string,department:string):boolean{
-        // if(employeeUtility.checkType(employeeTemp)){
-        //     return false;
-        // }
-
-//remove leading zeros in salary
-        // salary = employeeUtility.removeLeadingZeros(salary);
-
-        //numberCheck return true if number is infinite or negative or isNaN
-        // if(employeeUtility.numberCheck( salary )){
-        //     return false;
-        // }
-
-
-    // static checkType(employee: Employee):boolean{
-    //     return typeof(employee.name) != "string" || typeof(employee.salary) != "number" || typeof(employee.department) != "string" ? true : false;
-    // }

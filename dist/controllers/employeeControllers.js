@@ -1,24 +1,31 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deleteEmployee = exports.updateEmployee = exports.createEmployee = exports.EmployeeRequest = exports.GetAllEmployeesResponse = void 0;
 const utilityFunctions_1 = require("../utils/utilityFunctions");
 const errors_1 = require("../utils/errors");
-const uuid_1 = require("uuid");
 // import {QueryResult} from 'pg';
-const emp_database_1 = require("../config/emp_database");
-var pg = require("pg");
-const Employees = [];
+// import { pool } from '../config/emp_database';
+const { sequelize, Employee } = require('../models/employee');
+const models_1 = __importDefault(require("../models"));
+// var pg = require("pg");
 // const pool2 = new pg();
+const Employees = [];
 //get
 const GetAllEmployeesResponse = async (req, res, next) => {
     console.log(">GetAllEmployeesResponse");
     // var client = new pg.Client;
     try {
         // const con = pool.getConnection(function(err:Error, con: typeof client))
-        const results = await emp_database_1.pool.query('SELECT * FROM employees');
+        // const results = await pool.query('SELECT * FROM employees');
+        const results = await models_1.default.Employee.findAll();
+        console.log("results: ");
+        console.log("____________________________");
         console.log(results);
-        // console.log(results.rows);
-        res.status(200).json({ employees: results.rows });
+        // res.status(200).json({employees:results.rows});
+        res.status(200).json({ employees: results });
         // pool.end();
     }
     catch (error) {
@@ -33,11 +40,13 @@ exports.GetAllEmployeesResponse = GetAllEmployeesResponse;
 const EmployeeRequest = async (req, res, next) => {
     try {
         const id = req.params.id;
-        if (await utilityFunctions_1.employeeUtility.checkInDatabase(id)) {
+        const employee = await models_1.default.Employee.findOne({
+            where: { id },
+        });
+        if (employee == null) {
             throw new errors_1.NotFound("Not Found");
         }
-        const employee = await emp_database_1.pool.query('SELECT * FROM employees WHERE id =\'' + (id) + '\';');
-        res.status(200).json(employee.rows);
+        res.status(200).json(employee);
     }
     catch (error) {
         // res.status(500).json({errorMessage:"Server error"});
@@ -48,29 +57,16 @@ const EmployeeRequest = async (req, res, next) => {
 exports.EmployeeRequest = EmployeeRequest;
 //post
 const createEmployee = async (req, res, next) => {
-    console.log("createEmployee function");
+    let employee = req.body;
+    const { name, salary, department } = req.body;
     try {
-        //input validation
-        let employee = req.body;
-        console.log("name: " + employee.name + ", employee.salary: " + employee.salary + ", employee.department: " + employee.department);
+        // console.log("name: "+employee.name + ", employee.salary: "  +employee.salary+ ", employee.department: "+employee.department);
         if (!utilityFunctions_1.employeeUtility.inputValidation(employee, true)) {
             console.log("inputValidation function");
-            // return res.status(400).json({errorMessage:"Bad request, error in parameters"});;
             throw new errors_1.BadRequest("Bad Request, error in parameters");
         }
-        console.log("after input validation");
-        const newEmployee = req.body;
-        newEmployee.id = (0, uuid_1.v4)();
-        newEmployee.name = newEmployee.name.trim();
-        console.log("employee id: " + newEmployee.id);
-        await emp_database_1.pool.query('INSERT INTO employees (id,name,salary,department) VALUES ($1,$2,$3,$4)', [newEmployee.id, newEmployee.name, newEmployee.salary, newEmployee.department]);
-        // Employees.push(newEmployee);
-        res.status(200).json({
-            "id": newEmployee.id,
-            "name": newEmployee.name,
-            "salary": newEmployee.salary,
-            "department": newEmployee.department
-        });
+        const employee2 = await models_1.default.Employee.create({ name, salary, department });
+        return res.status(200).json(employee2);
     }
     catch (error) {
         // res.status(500).json({errorMessage:"Server error, createEmployee function"});
@@ -83,59 +79,47 @@ exports.createEmployee = createEmployee;
 const updateEmployee = async (req, res, next) => {
     console.log("update Employee function");
     try {
-        // const index = Employees.findIndex(i =>i.id === req.params.id);
-        // const employee = Employees[index];
         const id = req.params.id;
-        console.log("paramater id: " + id);
-        const employee = await emp_database_1.pool.query("SELECT * FROM employees WHERE id = '" + (id) + "';");
-        console.log("________");
-        console.log("employee: ");
-        console.log(employee.rows[0]);
-        console.log("________");
-        console.log("employee id: " + employee.rows[0].id);
-        console.log("employee name: " + employee.rows[0].name);
-        if (await utilityFunctions_1.employeeUtility.checkInDatabase(id)) {
-            throw new errors_1.NotFound("Not Found");
-        }
-        if (employee) {
+        // const { name, salary, department} = req.body;
+        const employee = await models_1.default.Employee.findOne({ where: { id } });
+        if (employee != null) {
+            let name = !req.body.name ? employee.name : req.body.name.trim();
+            let salary = !req.body.salary ? parseFloat(employee.salary) : req.body.salary;
+            let department = !req.body.department ? employee.department : req.body.department;
             let employee2 = {
-                "id": employee.rows[0].id,
-                "name": !req.body.name ? employee.rows[0].name : req.body.name.trim(),
-                "salary": !req.body.salary ? employee.rows[0].salary : req.body.salary,
-                "department": !req.body.department ? employee.rows[0].department : req.body.department
+                "id": employee.id,
+                "name": name,
+                "salary": salary,
+                "department": department
             };
-            //if input type is invalid, display error bad request
-            //input validation
             if (!utilityFunctions_1.employeeUtility.inputValidation(employee2, false)) {
-                // res.status(400).json({errorMessage:"Bad request"});
                 throw new errors_1.BadRequest("Bad Request");
             }
-            //if no change in employee details
-            if (employee.rows[0].name == employee2.name && employee.rows[0].salary == employee2.salary && employee.rows[0].department == employee2.department) {
+            if (employee.name == employee2.name && employee.salary == employee2.salary && employee.department == employee2.department) {
                 console.log("no change in employee details");
                 // res.status(304).json({errorMessage:"No Change"});
                 throw new errors_1.NoChange("No Change");
             }
             else {
                 // Employees[index]={...employee,...employee2};
-                console.log("Updating employee, id: " + id);
+                console.log("Updating employee, id: " + employee.id);
                 console.log("employee2:");
                 console.log(employee2);
                 console.log("------");
-                await emp_database_1.pool.query("UPDATE employees "
-                    + 'SET id = $1,name = $2,salary = $3,department = $4 '
-                    + "WHERE id = $1;", [employee2.id, employee2.name, employee2.salary, employee2.department]);
-                const employee = await emp_database_1.pool.query("SELECT * FROM employees WHERE id = '" + (id) + "';");
+                employee.name = name;
+                employee.salary = salary;
+                employee.department = department;
                 console.log("result employee: ");
-                console.log(employee.rows[0]);
-                res.status(200).json(employee.rows[0]);
+                console.log(employee);
+                res.status(200).json(employee);
                 console.log("printed status");
             }
         }
         else {
-            // res.status(404).json({errorMessage:"Not Found"});
             throw new errors_1.NotFound("Not Found");
         }
+        await employee.save();
+        res.status(200).json(employee);
     }
     catch (error) {
         // res.status(500).json({errorMessage:"Server error"});
@@ -146,17 +130,15 @@ exports.updateEmployee = updateEmployee;
 //delete
 const deleteEmployee = async (req, res, next) => {
     try {
-        // const index = Employees.findIndex(i => i.id === req.params.id);
-        // const employee = Employees[index];
-        const id = (req.params.id);
-        if (!(await utilityFunctions_1.employeeUtility.checkInDatabase(id))) {
-            await emp_database_1.pool.query('DELETE FROM employees WHERE id = $1', [id]);
-            res.status(204).json();
-            console.log("id: " + id + " is deleted successfully");
+        const id = req.params.id;
+        const employee = await models_1.default.Employee.findOne({ where: { id } });
+        if (employee != null) {
+            await employee.destroy();
         }
         else {
             throw new errors_1.NotFound("Not Found");
         }
+        return res.status(204).json({ message: 'User deleted!' });
     }
     catch (error) {
         // res.status(500).json({errorMessage:"Server error"});
@@ -165,42 +147,4 @@ const deleteEmployee = async (req, res, next) => {
     }
 };
 exports.deleteEmployee = deleteEmployee;
-// pool.on('connect', () => {
-//     console.log('Connected to the Database'); 
-// });
-//         const checkId = await pool.query(
-// "SELECT COUNT(*) FROM employees WHERE id = '" + id +"';"
-//         );
-//         console.log("checkId: " + checkId.rows[0].count);
-//         console.log("______");
-// "SELECT employees.id FROM employees WHERE EXISTS (SELECT employees.id FROM employees WHERE employees.id = ' "+ id +" ');"
-// "SELECT "
-// + "CASE WHEN EXISTS "
-// + "( "
-//     + "SELECT FROM employees "
-//     + "WHERE employees.id = "
-//     + id
-// + " ) "
-// + "THEN 'TRUE' "
-// + "ELSE 'FALSE' "
-// + "END;"
-// const employee = await pool.query('SELECT * FROM employees WHERE id =\''+(id)+'\';');
-// const checkId = await pool.query(
-//     'SELECT COUNT(\''+ id +'\') FROM employees'
-// );
-// const checkId = await pool.query(
-//     "SELECT COUNT(*) FROM employees WHERE id = '" + id +"';"
-// );
-// console.log("checkId: " + checkId.rows[0].count);
-// console.log("______");
-// console.log(results);
-// console.log("EmployeeRequest");
-// const employee = Employees.find(i=>i.id == req.params.id);
-// if(employee){
-// }
-// else{
-//     // res.status(404).json({errorMessage:"Not Found"});
-//     throw new NotFound("Not Found");
-// }
-// pool.end();
 //.
