@@ -3,24 +3,48 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 const express_1 = __importDefault(require("express"));
 const body_parser_1 = require("body-parser");
 const employeeRoutes_1 = __importDefault(require("./routes/employeeRoutes"));
 const handleErrors_1 = __importDefault(require("./middleware/handleErrors"));
 // const { sequelize } = require('./models');
 const models_1 = require("./models");
+const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
-const port = 3000;
+// const pool = new Pool({
+//   host: process.env.DB_HOST,
+//   user: process.env.DB_USER,
+//   database: process.env.DB_NAME,
+//   password: process.env.DB_PASSWORD,
+//   port: parseInt(process.env.DB_PORT || "5432")
+// });
+const port = 3001;
 app.use((0, body_parser_1.json)()); //or express.json()?????
+app.use((0, cors_1.default)());
 console.log("Initiating routes");
 app.use('/employee', employeeRoutes_1.default);
 //______________________
 console.log("Initiating handleErrors");
 app.use(handleErrors_1.default);
+// const connectToDB = async () => {
+//   try {
+//     await pool.connect();
+//   } catch (err) {
+//     console.log(err);
+//   }
+// };
+// connectToDB();
 app.listen(port, async () => {
-    console.log("server started on http://localhost:" + port);
-    await models_1.sequelize.authenticate();
-    console.log("Database synced.");
+    try {
+        console.log("server started on http://localhost:" + port);
+        await models_1.sequelize.authenticate();
+        console.log("Database synced.");
+    }
+    catch (error) {
+        console.log(error);
+    }
 });
 //import
 //middleware
@@ -64,3 +88,9 @@ app.listen(port, async () => {
 //npx sequelize-cli model:generate --name Employee --attributes id:UUID,name:STRING,salary:DECIMAL,department:ENUM:'{HR,PS}'
 //npx sequelize-cli db:migrate
 //npx sequelize-cli db:migrate:status
+//docker build .
+//docker run 2dbc9a7e71521454c98791060285ed5dcf4b5388da30401d46ee9b9a
+//as of 9 Mar
+//docker-compose up
+//sudo lsof -i :5432
+//sudo kill -15 149

@@ -1,14 +1,18 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-require("dotenv/config");
+const dotenv_1 = __importDefault(require("dotenv"));
+dotenv_1.default.config();
 // dotenv.config({path: '.env'});
 // const Pool = require('pg-pool');
 const Sequelize = require('sequelize');
 const { QueryTypes } = require('sequelize');
 const config = {
     username: process.env.DB_USER,
-    database: process.env.DB,
-    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
     port: process.env.DB_PORT,
     max: process.env.DB_MAX_CLIENTS,
     idleTimeoutMillis: process.env.DB_IDLE_Timeout_MS

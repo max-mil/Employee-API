@@ -1,15 +1,29 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express, {Request, Response, NextFunction} from 'express';
 import { json } from 'body-parser';
 import employeeRoutes from './routes/employeeRoutes';
 import { employeeUtility } from './utils/utilityFunctions';
 import {Role} from './utils/IEmployee';
 import handleErrors from './middleware/handleErrors'
-
 // const { sequelize } = require('./models');
 import {sequelize} from './models';
+import { Pool } from "pg";
+import cors from 'cors'
+
+
+
 const app = express();
-const port = 3000;
+// const pool = new Pool({
+//   host: process.env.DB_HOST,
+//   user: process.env.DB_USER,
+//   database: process.env.DB_NAME,
+//   password: process.env.DB_PASSWORD,
+//   port: parseInt(process.env.DB_PORT || "5432")
+// });
+const port = 3001;
 app.use(json()); //or express.json()?????
+app.use(cors())
 console.log("Initiating routes");
 app.use('/employee',employeeRoutes);
 
@@ -18,11 +32,24 @@ app.use('/employee',employeeRoutes);
 console.log("Initiating handleErrors");
 app.use(handleErrors);
 
+// const connectToDB = async () => {
+//   try {
+//     await pool.connect();
+//   } catch (err) {
+//     console.log(err);
+//   }
+// };
+// connectToDB();
+
 app.listen( port, async () => {
-  console.log("server started on http://localhost:"+port);
-  await sequelize.authenticate();
-  
-  console.log("Database synced.");
+  try {
+    console.log("server started on http://localhost:"+port);
+    await sequelize.authenticate();
+    console.log("Database synced.");
+  } catch (error) {
+    console.log(error);
+    
+  }
 });
 
 
@@ -80,3 +107,12 @@ app.listen( port, async () => {
 //npx sequelize-cli model:generate --name Employee --attributes id:UUID,name:STRING,salary:DECIMAL,department:ENUM:'{HR,PS}'
 //npx sequelize-cli db:migrate
 //npx sequelize-cli db:migrate:status
+
+
+//docker build .
+//docker run 2dbc9a7e71521454c98791060285ed5dcf4b5388da30401d46ee9b9a
+//as of 9 Mar
+//docker-compose up
+
+//sudo lsof -i :5432
+//sudo kill -15 149

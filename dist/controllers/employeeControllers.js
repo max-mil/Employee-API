@@ -15,15 +15,15 @@ const models_1 = __importDefault(require("../models"));
 const Employees = [];
 //get
 const GetAllEmployeesResponse = async (req, res, next) => {
-    console.log(">GetAllEmployeesResponse");
+    // console.log(">GetAllEmployeesResponse");
     // var client = new pg.Client;
     try {
         // const con = pool.getConnection(function(err:Error, con: typeof client))
         // const results = await pool.query('SELECT * FROM employees');
         const results = await models_1.default.Employee.findAll();
-        console.log("results: ");
-        console.log("____________________________");
-        console.log(results);
+        // console.log("results: ");
+        // console.log("____________________________");
+        // console.log(results);
         // res.status(200).json({employees:results.rows});
         res.status(200).json({ employees: results });
         // pool.end();

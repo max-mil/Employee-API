@@ -1,5 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
 import express, {Request, Response, NextFunction} from 'express';
-import 'dotenv/config';
 import { IEmployee } from '../utils/IEmployee';
 // dotenv.config({path: '.env'});
 // const Pool = require('pg-pool');
@@ -8,8 +9,8 @@ const {QueryTypes} = require('sequelize');
 
 const config = {
     username: process.env.DB_USER,
-    database: process.env.DB,
-    password: process.env.DB_PASS,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
     port: process.env.DB_PORT,
     max: process.env.DB_MAX_CLIENTS, //max number of clients in the pool
     idleTimeoutMillis: process.env.DB_IDLE_Timeout_MS
